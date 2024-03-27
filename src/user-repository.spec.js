@@ -1,6 +1,6 @@
 const { MongoClient } = require("mongodb");
 const UserRepository = require("./user-repository");
-require('dotenv').config();
+require("dotenv").config();
 
 describe("UserRepository", () => {
   let userRepository;
@@ -39,7 +39,7 @@ describe("UserRepository", () => {
       });
     });
 
-    test("Should throw and exception for a non-existent user", async () => {
+    test("Should throw an exception for a non-existent user", async () => {
       await expect(
         userRepository.findOneByEmail("john@doe.com")
       ).rejects.toThrow("User with email john@doe.com does not exist");
@@ -56,11 +56,40 @@ describe("UserRepository", () => {
 
       expect(result).toStrictEqual(user);
     });
+
+    test("Should throw an exception if user with same email already exists", async () => {
+      await userRepository.insert({
+        name: "John Doe",
+        email: "john@doe.com",
+      });
+
+      await expect(
+        userRepository.insert({
+          name: "Jane Doe",
+          email: "john@doe.com",
+        })
+      ).rejects.toThrow(`User with email john@doe.com already exists!`);
+    });
   });
 
   describe("update", () => {
-    test.todo("Should update an existing user");
-    test.todo("Should throw and exception for a non-existent user");
+    test("Should update an existing user", async () => {
+      const user = await userRepository.insert({
+        name: "John Doe",
+        email: "john@doe.com",
+      });
+
+      await userRepository.update(user._id, { name: "Jane Doe" });
+      const updatedUser = await userRepository.findOneByEmail("john@doe.com");
+
+      expect(updatedUser.name).toBe("Jane Doe");
+    });
+
+    test("Should throw an exception for a non-existent user", async () => {
+      await expect(
+        userRepository.update("nonExistentID", { name: "Jane Doe" })
+      ).rejects.toThrow("User with ID nonExistentID does not exist");
+    });
   });
 
   describe("delete", () => {
@@ -75,11 +104,33 @@ describe("UserRepository", () => {
         userRepository.findOneByEmail("john@doe.com")
       ).rejects.toThrow();
     });
-    test.todo("Should throw and exception for a non-existent user");
+
+    test("Should throw an exception for a non-existent user", async () => {
+      await expect(userRepository.delete("nonExistentID")).rejects.toThrow(
+        "User with ID nonExistentID does not exist"
+      );
+    });
   });
 
   describe("findAll", () => {
-    test.todo("Should return an empty list of users");
-    test.todo("Should return a list with all users");
+    test("Should return an empty list of users", async () => {
+      const users = await userRepository.findAll();
+      expect(users).toEqual([]);
+    });
+
+    test("Should return a list with 2 users", async () => {
+      await userRepository.insert({
+        name: "John Doe",
+        email: "john@doe.com",
+      });
+
+      await userRepository.insert({
+        name: "Jane Doe",
+        email: "jane@doe.com",
+      });
+
+      const users = await userRepository.findAll();
+      expect(users.length).toBe(2);
+    });
   });
 });
