@@ -39,7 +39,7 @@ describe("UserRepository", () => {
       });
     });
 
-    test("Should throw and exception for a non-existent user", async () => {
+    test("Should throw an exception for a non-existent user", async () => {
       await expect(
         userRepository.findOneByEmail("john@doe.com")
       ).rejects.toThrow("User with email john@doe.com does not exist");
@@ -56,6 +56,20 @@ describe("UserRepository", () => {
 
       expect(result).toStrictEqual(user);
     });
+
+    test("Should throw an exception if user with same email already exists", async () => {
+      await userRepository.insert({
+        name: "John Doe",
+        email: "john@doe.com",
+      });
+
+      await expect(
+        userRepository.insert({
+          name: "Jane Doe",
+          email: "john@doe.com",
+        })
+      ).rejects.toThrow(`User with email john@doe.com already exists!`);
+    });
   });
 
   describe("update", () => {
@@ -64,18 +78,18 @@ describe("UserRepository", () => {
         name: "John Doe",
         email: "john@doe.com",
       });
-    
+
       await userRepository.update(user._id, { name: "Jane Doe" });
       const updatedUser = await userRepository.findOneByEmail("john@doe.com");
-    
+
       expect(updatedUser.name).toBe("Jane Doe");
     });
-    
+
     test("Should throw an exception for a non-existent user", async () => {
       await expect(
         userRepository.update("nonExistentID", { name: "Jane Doe" })
       ).rejects.toThrow("User with ID nonExistentID does not exist");
-    });    
+    });
   });
 
   describe("delete", () => {
@@ -92,10 +106,10 @@ describe("UserRepository", () => {
     });
 
     test("Should throw an exception for a non-existent user", async () => {
-      await expect(
-        userRepository.delete("nonExistentID")
-      ).rejects.toThrow("User with ID nonExistentID does not exist");
-    });    
+      await expect(userRepository.delete("nonExistentID")).rejects.toThrow(
+        "User with ID nonExistentID does not exist"
+      );
+    });
   });
 
   describe("findAll", () => {
